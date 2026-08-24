@@ -1,0 +1,40 @@
+name: Sync blog posts from Hashnode
+
+on:
+  schedule:
+    # Runs once a day at 06:00 UTC. Edit the cron if you want it more/less often.
+    - cron: "0 6 * * *"
+  workflow_dispatch: {} # lets you trigger it manually from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  sync-posts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install fast-xml-parser
+
+      - name: Update posts array from RSS feed
+        run: node scripts/update-blog-posts.mjs
+
+      - name: Commit changes if any
+        run: |
+          git config user.name "blog-sync-bot"
+          git config user.email "actions@github.com"
+          if git diff --quiet -- blog.html; then
+            echo "No changes to commit."
+          else
+            git add blog.html
+            git commit -m "chore: sync latest blog posts from Hashnode"
+            git push
+          fi
