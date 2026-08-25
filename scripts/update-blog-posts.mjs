@@ -21,11 +21,20 @@ function truncate(text, len) {
   return text.length > len ? text.slice(0, len).trim() + "…" : text;
 }
 
-function extractCoverImage(item) {
-  // Hashnode RSS puts the cover image as the first <img> in content:encoded
-  const content = item["content:encoded"] || item.description || "";
-  const match = /<img[^>]+src="([^"]+)"/i.exec(content);
-  return match ? match[1] : null;
+async function fetchCoverImage(postUrl) {
+  // Hashnode RSS content isn't consistent enough to reliably regex out the
+  // cover image, so we fetch each post page directly and read its
+  // og:image meta tag, which Hashnode always sets to the real cover.
+  try {
+    const res = await fetch(postUrl, { headers: { "User-Agent": "blog-sync-bot" } });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const match = /<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i.exec(html)
+      || /<meta[^>]+content="([^"]+)"[^>]+property="og:image"/i.exec(html);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
 }
 
 function toIsoDate(pubDate) {
@@ -44,17 +53,20 @@ async function main() {
   const list = Array.isArray(items) ? items : items ? [items] : [];
   if (list.length === 0) throw new Error("No <item> entries found in RSS feed");
 
-  const posts = list.slice(0, POST_COUNT).map((item) => {
+  const posts = [];
+  for (const item of list.slice(0, POST_COUNT)) {
     const brief = truncate(stripHtml(item.description || ""), 160);
-    return {
+    const url = (item.link || "").trim();
+    const coverImage = await fetchCoverImage(url);
+    posts.push({
       title: (item.title || "").trim(),
       brief,
-      url: (item.link || "").trim(),
+      url,
       publishedAt: toIsoDate(item.pubDate) || "",
       tags: [], // Hashnode RSS doesn't include tags; left empty, edit manually if you want chips
-      coverImage: extractCoverImage(item),
-    };
-  });
+      coverImage,
+    });
+  }
 
   const arrayBody = posts
     .map((p) => {
