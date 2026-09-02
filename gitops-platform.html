@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Self-Service GitOps Platform on AWS EKS — Adeniyi James</title>
+<style>
+  :root{
+    --bg: #0d0e12;
+    --surface: #14161c;
+    --surface-2: #191c23;
+    --border: #22252c;
+    --text: #e8e9ec;
+    --text-dim: #8b909c;
+    --text-faint: #565a63;
+    --cyan: #5eead4;
+    --cyan-dim: rgba(94,234,212,0.12);
+    --green: #3ddc84;
+    --green-dim: rgba(61,220,132,0.12);
+    --amber: #f5b942;
+    --amber-dim: rgba(245,185,66,0.12);
+    --shadow: 0 20px 60px -20px rgba(0,0,0,0.6);
+    --radius: 3px;
+    --mono: 'JetBrains Mono', ui-monospace, 'IBM Plex Mono', 'SFMono-Regular', Menlo, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  a{ color:inherit; text-decoration:none; }
+  .container{ max-width:960px; margin:0 auto; padding:0 28px; }
+  .mono{ font-family:var(--mono); }
+
+  header{
+    position:sticky; top:0; z-index:40;
+    background:color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--border);
+  }
+  .navbar{ display:flex; align-items:center; justify-content:space-between; height:64px; }
+  .logo{ font-family:var(--mono); font-size:14px; font-weight:600; }
+  .logo .caret{ color:var(--cyan); }
+  .back-link{
+    font-family:var(--mono); font-size:13px; color:var(--text-dim);
+    display:flex; align-items:center; gap:6px; transition:color .2s ease;
+  }
+  .back-link:hover{ color:var(--cyan); }
+
+  /* Hero */
+  .hero{ padding:64px 0 40px; border-bottom:1px solid var(--border); }
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--cyan); display:flex; align-items:center; gap:8px; margin-bottom:16px;
+  }
+  .eyebrow::before{ content:"◆"; font-size:9px; }
+  .hero h1{ font-size:clamp(30px,4.4vw,44px); font-weight:700; letter-spacing:-0.02em; margin:0 0 14px; }
+  .hero-pitch{ font-size:16px; color:var(--text-dim); max-width:640px; margin:0 0 28px; }
+
+  .chip-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:30px; }
+  .chip{
+    font-family:var(--mono); font-size:11px; color:var(--text-dim);
+    border:1px solid var(--border); border-radius:3px; padding:5px 10px;
+  }
+
+  .action-row{ display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+  .action-btn{
+    font-family:var(--mono); font-size:13px; display:flex; align-items:center; gap:8px;
+    border:1px solid var(--border); border-radius:var(--radius); padding:9px 16px;
+    background:var(--surface); transition:border-color .2s ease, color .2s ease;
+  }
+  .action-btn.github{ color:var(--text); }
+  .action-btn.github:hover{ border-color:var(--cyan); color:var(--cyan); }
+  .action-btn svg{ width:16px; height:16px; }
+  .action-btn.youtube{
+    color:var(--text-faint); cursor:default; opacity:0.7;
+  }
+  .badge-soon{
+    font-family:var(--mono); font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase;
+    background:var(--amber-dim); color:var(--amber); padding:2px 6px; border-radius:2px; margin-left:2px;
+  }
+
+  /* Status row */
+  .status-row{
+    display:flex; gap:1px; background:var(--border); border:1px solid var(--border);
+    margin-top:36px; flex-wrap:wrap;
+  }
+  .status-item{ flex:1; min-width:160px; background:var(--bg); padding:16px 18px; }
+  .status-item .num{ font-family:var(--mono); font-size:20px; font-weight:700; color:var(--green); }
+  .status-item.pending .num{ color:var(--amber); }
+  .status-item .label{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+
+  /* Section */
+  section.block{ padding:56px 0; border-bottom:1px solid var(--border); }
+  section.block h2{ font-size:24px; font-weight:700; margin:0 0 18px; }
+  section.block p{ color:var(--text-dim); font-size:15px; max-width:720px; }
+
+  .arch-img{ width:100%; border-radius:6px; border:1px solid var(--border); margin-top:8px; }
+
+  /* Phase checklist */
+  .phase-list{ display:flex; flex-direction:column; gap:10px; margin-top:20px; }
+  .phase-row{
+    display:flex; align-items:flex-start; gap:14px; padding:14px 16px;
+    background:var(--surface); border:1px solid var(--border); border-radius:6px;
+  }
+  .phase-icon{
+    font-family:var(--mono); font-size:13px; width:24px; height:24px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;
+  }
+  .phase-icon.done{ background:var(--green-dim); color:var(--green); }
+  .phase-icon.progress{ background:var(--amber-dim); color:var(--amber); }
+  .phase-title{ font-weight:600; font-size:14.5px; margin-bottom:3px; }
+  .phase-desc{ font-size:13px; color:var(--text-dim); }
+
+  /* Gallery */
+  .gallery-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:22px;
+  }
+  @media (max-width:700px){ .gallery-grid{ grid-template-columns:repeat(2,1fr); } }
+  .gallery-item{
+    border:1px solid var(--border); border-radius:6px; overflow:hidden; cursor:pointer;
+    background:var(--surface); transition:border-color .2s ease, transform .2s ease;
+  }
+  .gallery-item:hover{ border-color:var(--cyan); transform:translateY(-3px); }
+  .gallery-item img{ width:100%; height:120px; object-fit:cover; object-position:top; display:block; }
+  .gallery-caption{ font-family:var(--mono); font-size:10.5px; color:var(--text-dim); padding:8px 10px; }
+  .gallery-caption b{ color:var(--text); display:block; font-size:11px; margin-bottom:2px; }
+
+  /* Challenges */
+  .challenge{
+    border-left:2px solid var(--amber); padding:4px 0 4px 18px; margin-bottom:22px;
+  }
+  .challenge h3{ font-size:15px; margin:0 0 6px; }
+  .challenge p{ font-size:13.5px; margin:0; color:var(--text-dim); }
+
+  /* Lightbox */
+  .lightbox{
+    position:fixed; inset:0; background:rgba(5,6,8,0.92); display:none;
+    align-items:center; justify-content:center; z-index:100; padding:40px;
+  }
+  .lightbox.open{ display:flex; }
+  .lightbox img{ max-width:100%; max-height:82vh; border-radius:6px; border:1px solid var(--border); }
+  .lightbox-caption{ font-family:var(--mono); font-size:13px; color:var(--text-dim); text-align:center; margin-top:14px; }
+  .lightbox-close{
+    position:absolute; top:24px; right:32px; font-family:var(--mono); font-size:13px;
+    color:var(--text-dim); border:1px solid var(--border); border-radius:var(--radius);
+    padding:6px 12px; cursor:pointer; background:var(--surface);
+  }
+  .lightbox-close:hover{ color:var(--cyan); border-color:var(--cyan); }
+  .lightbox-nav{
+    position:absolute; top:50%; transform:translateY(-50%); font-size:22px; color:var(--text-dim);
+    cursor:pointer; padding:12px; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius);
+  }
+  .lightbox-nav:hover{ color:var(--cyan); border-color:var(--cyan); }
+  .lightbox-prev{ left:24px; }
+  .lightbox-next{ right:24px; }
+
+  footer{ padding:36px 0; text-align:center; }
+  footer a{ font-family:var(--mono); font-size:13px; color:var(--cyan); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container navbar">
+    <div class="logo"><span class="caret">&gt;</span>Adeniyi James<span class="caret">_</span></div>
+    <a href="portfolio-page.html" class="back-link">&larr; Back to Portfolio</a>
+  </div>
+</header>
+
+<main>
+
+  <section class="hero container">
+    <span class="eyebrow">case study</span>
+    <h1>Self-Service GitOps Platform on AWS EKS</h1>
+    <p class="hero-pitch">
+      A platform that takes application code from a developer's push all the way to a safely deployed,
+      observed, and policy-enforced production environment — with zero manual deployment steps anywhere
+      in the chain. Built entirely on AWS EKS, described entirely as code.
+    </p>
+
+    <div class="chip-row">
+      <span class="chip">Terraform</span>
+      <span class="chip">AWS EKS</span>
+      <span class="chip">GitHub Actions</span>
+      <span class="chip">Argo CD</span>
+      <span class="chip">Argo Rollouts</span>
+      <span class="chip">Prometheus / Grafana</span>
+      <span class="chip">Kyverno</span>
+      <span class="chip">External Secrets Operator</span>
+    </div>
+
+    <div class="action-row">
+      <a href="https://github.com/AdeniyiDev/platform-infra" target="_blank" rel="noopener" class="action-btn github">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.09 3.29 9.4 7.86 10.93.58.1.79-.25.79-.56 0-.27-.01-1.17-.02-2.12-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 2.87-.39c.97.01 1.95.13 2.87.39 2.19-1.49 3.15-1.18 3.15-1.18.62 1.58.23 2.75.11 3.04.73.8 1.18 1.83 1.18 3.09 0 4.42-2.69 5.4-5.25 5.68.42.36.78 1.08.78 2.18 0 1.57-.01 2.84-.01 3.23 0 .31.21.67.8.56A10.52 10.52 0 0 0 23.5 12c0-6.35-5.15-11.5-11.5-11.5Z"/></svg>
+        View on GitHub
+      </a>
+      <span class="action-btn youtube" title="Video coming soon">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.5 15.5v-7L15.8 12l-6.3 3.5Z"/></svg>
+        Video Walkthrough <span class="badge-soon">Coming Soon</span>
+      </span>
+    </div>
+
+    <div class="status-row">
+      <div class="status-item"><div class="num">5.5 / 6</div><div class="label">Phases Complete</div></div>
+      <div class="status-item"><div class="num">3</div><div class="label">Repositories</div></div>
+      <div class="status-item pending"><div class="num">1</div><div class="label">Phase In Progress</div></div>
+    </div>
+  </section>
+
+  <section class="block container">
+    <h2>Architecture</h2>
+    <p>
+      Six phases, each adding one capability on top of the last: infrastructure, CI/CD, GitOps, progressive
+      delivery, observability, and finally guardrails and secrets — none of them replacing what came before.
+    </p>
+    <img src="assets/architecture.png" alt="Full platform architecture diagram, all six phases" class="arch-img">
+  </section>
+
+  <section class="block container">
+    <h2>What's Built</h2>
+    <div class="phase-list">
+      <div class="phase-row">
+        <div class="phase-icon done">&#10003;</div>
+        <div><div class="phase-title">Infrastructure</div><div class="phase-desc">VPC, EKS cluster, ECR, GitHub OIDC — all provisioned via Terraform, fully destroyable and reproducible.</div></div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-icon done">&#10003;</div>
+        <div><div class="phase-title">GitOps</div><div class="phase-desc">Argo CD watches a dedicated manifests repo and auto-syncs the cluster to match Git — no manual kubectl for deployments, ever.</div></div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-icon done">&#10003;</div>
+        <div><div class="phase-title">CI/CD Pipeline</div><div class="phase-desc">GitHub Actions: lint, test, build, Trivy vulnerability scan, push to ECR, auto-update the manifests repo — authenticated via short-lived OIDC tokens, no stored AWS keys.</div></div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-icon done">&#10003;</div>
+        <div><div class="phase-title">Progressive Delivery</div><div class="phase-desc">Argo Rollouts canary deployments with an automated health check that rolls back a bad deploy on its own — proven by deliberately breaking a deployment and watching it self-heal.</div></div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-icon done">&#10003;</div>
+        <div><div class="phase-title">Observability</div><div class="phase-desc">Prometheus, Grafana, and Alertmanager — live dashboards and a real alert delivered end-to-end to a webhook, with proof below.</div></div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-icon done">&#10003;</div>
+        <div><div class="phase-title">Guardrails</div><div class="phase-desc">Kyverno policy enforcement blocking any pod that runs as root or lacks resource limits — proven against both a violating and a compliant pod.</div></div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-icon progress">&#8226;</div>
+        <div><div class="phase-title">Secrets Management</div><div class="phase-desc">External Secrets Operator + IRSA — Terraform written and mostly applied; final Helm install and sync verification in progress.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block container">
+    <h2>Proof — Observability, End to End</h2>
+    <p>
+      A real alert, from a real live metric, delivered to a real destination. Click any image to view the full sequence.
+    </p>
+    <div class="gallery-grid" id="gallery">
+      <div class="gallery-item" data-caption="Step 1 — Logging into the freshly deployed Grafana instance.">
+        <img src="assets/01-login.png" alt="Grafana login screen">
+        <div class="gallery-caption"><b>01. Grafana Login</b>Fresh install, first access</div>
+      </div>
+      <div class="gallery-item" data-caption="Step 2 — Confirmed Grafana is live and connected inside the cluster.">
+        <img src="assets/02-home.png" alt="Grafana home dashboard">
+        <div class="gallery-caption"><b>02. Home Dashboard</b>Connected and ready</div>
+      </div>
+      <div class="gallery-item" data-caption="Step 3 — Live, real-time CPU and memory metrics, scraped by Prometheus and rendered by Grafana — not placeholder data.">
+        <img src="assets/03-live-dashboard.png" alt="Live Kubernetes compute resources dashboard">
+        <div class="gallery-caption"><b>03. Live Metrics</b>Real cluster data, refreshing every 10s</div>
+      </div>
+      <div class="gallery-item" data-caption="Step 4 — Setting up a webhook contact point so Alertmanager has somewhere real to deliver alerts.">
+        <img src="assets/04-webhook-setup.png" alt="Creating a webhook contact point in Grafana">
+        <div class="gallery-caption"><b>04. Webhook Setup</b>Contact point configured</div>
+      </div>
+      <div class="gallery-item" data-caption="Step 5 — Building a real PromQL-backed alert rule, guaranteed to fire against live cluster metrics.">
+        <img src="assets/05-alert-rule-builder.png" alt="Building an alert rule with PromQL query">
+        <div class="gallery-caption"><b>05. Alert Rule Builder</b>Real query, live evaluation</div>
+      </div>
+      <div class="gallery-item" data-caption="Step 6 — The alert rule saved, routed to the webhook contact point, evaluating every 10 seconds.">
+        <img src="assets/06-alert-rule-saved.png" alt="Alert rule saved and configured">
+        <div class="gallery-caption"><b>06. Rule Saved</b>Routed and evaluating</div>
+      </div>
+      <div class="gallery-item" data-caption="Step 7 — The actual proof: a real HTTP POST, with the correct firing payload, delivered by Alertmanager.">
+        <img src="assets/07-webhook-delivered.png" alt="Webhook.site receiving the real fired alert payload">
+        <div class="gallery-caption"><b>07. Delivered</b>Real payload received — the proof</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block container" style="border-bottom:none;">
+    <h2>Real Challenges, Actually Debugged</h2>
+    <div class="challenge">
+      <h3>A hard AWS vCPU quota, hit mid-build</h3>
+      <p>Scaling worker nodes for a heavier workload ran straight into an account-wide vCPU ceiling — a hard limit no amount of retrying could cross. Diagnosed directly via the AWS Service Quotas API rather than guessing.</p>
+    </div>
+    <div class="challenge">
+      <h3>An instance type silently excluded from Free Tier</h3>
+      <p>The obvious next step — a bigger instance type — turned out to not be Free Tier eligible on this account. Queried AWS directly for the real eligible list instead of trial-and-error, and found t3.small: same vCPU cost, roughly 3x the pod density.</p>
+    </div>
+    <div class="challenge">
+      <h3>A silent GitHub OIDC trust policy mismatch</h3>
+      <p>A correctly-written IAM trust policy was still being rejected. Added a temporary debug step to decode the actual token GitHub was issuing, compared it character-for-character, and found GitHub was appending a stable numeric ID to the repo name — invisible until inspected directly.</p>
+    </div>
+    <div class="challenge">
+      <h3>Deliberately broken, to prove the safety net works</h3>
+      <p>Pointed a canary rollout's health check at a URL that doesn't exist, on purpose, and confirmed Argo Rollouts detected 5 consecutive failures, aborted the deployment automatically, and kept the previous stable version fully healthy the entire time — zero user impact.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <a href="portfolio-page.html">&larr; Back to Portfolio</a>
+</footer>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-nav lightbox-prev" id="lbPrev">&#8249;</div>
+  <div>
+    <img id="lightboxImg" src="" alt="">
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+  </div>
+  <div class="lightbox-nav lightbox-next" id="lbNext">&#8250;</div>
+  <div class="lightbox-close" id="lbClose">Close (Esc)</div>
+</div>
+
+<script>
+  const items = Array.from(document.querySelectorAll('.gallery-item'));
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+  const lightboxCaption = document.getElementById('lightboxCaption');
+  let currentIndex = 0;
+
+  function openLightbox(index){
+    currentIndex = index;
+    const item = items[index];
+    lightboxImg.src = item.querySelector('img').src;
+    lightboxCaption.textContent = item.dataset.caption;
+    lightbox.classList.add('open');
+  }
+  function closeLightbox(){ lightbox.classList.remove('open'); }
+  function nextImage(){ openLightbox((currentIndex + 1) % items.length); }
+  function prevImage(){ openLightbox((currentIndex - 1 + items.length) % items.length); }
+
+  items.forEach((item, i) => item.addEventListener('click', () => openLightbox(i)));
+  document.getElementById('lbClose').addEventListener('click', closeLightbox);
+  document.getElementById('lbNext').addEventListener('click', nextImage);
+  document.getElementById('lbPrev').addEventListener('click', prevImage);
+  lightbox.addEventListener('click', (e) => { if(e.target === lightbox) closeLightbox(); });
+  document.addEventListener('keydown', (e) => {
+    if(!lightbox.classList.contains('open')) return;
+    if(e.key === 'Escape') closeLightbox();
+    if(e.key === 'ArrowRight') nextImage();
+    if(e.key === 'ArrowLeft') prevImage();
+  });
+</script>
+
+</body>
+</html>

@@ -344,18 +344,62 @@
       <div class="content-grid" id="contentGrid">
 
         <!-- PROJECT CARDS -->
-        <div class="card reveal" data-category="project">
-          <div class="card-thumb"><span>&gt;_</span></div>
-          <div class="card-body">
-            <span class="card-badge">Project</span>
-            <h3 class="card-title">IoT Telemetry Dashboard</h3>
-            <p class="card-desc">Real-time ingestion and visualization pipeline for distributed sensor fleets, handling thousands of events per second.</p>
-            <div class="chip-row">
-              <span class="chip">AWS</span><span class="chip">Kafka</span><span class="chip">Grafana</span><span class="chip">Go</span>
-            </div>
-            <a href="#" class="card-link">View project →</a>
-          </div>
-        </div>
+<!--
+  REPLACEMENT CARD — swap this in for the existing "IoT Telemetry Dashboard"
+  card in portfolio-page.html (the first project card in #contentGrid).
+
+  New styles needed: add the block below to your <style> section (anywhere
+  inside :root's sibling rules is fine, e.g. right after .card-link{...}).
+-->
+
+<style>
+  .card-social-row{
+    display:flex; align-items:center; gap:14px; margin-top:2px;
+  }
+  .card-social-link{
+    display:flex; align-items:center; gap:6px; font-family: var(--mono);
+    font-size:11px; color: var(--text-dim); transition: color .2s ease;
+  }
+  .card-social-link.clickable:hover{ color: var(--cyan); }
+  .card-social-link.disabled{ color: var(--text-faint); cursor:default; opacity:0.65; }
+  .card-social-link svg{ width:15px; height:15px; flex-shrink:0; }
+  .card-social-soon{
+    font-family: var(--mono); font-size:9px; letter-spacing:0.06em; text-transform:uppercase;
+    background: var(--amber-dim); color: var(--amber); padding:1px 5px; border-radius:2px; margin-left:2px;
+  }
+</style>
+
+<div class="card reveal" data-category="project">
+  <div class="card-thumb">
+  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.85">
+    <circle cx="6" cy="6" r="2.4"/>
+    <circle cx="6" cy="18" r="2.4"/>
+    <circle cx="18" cy="12" r="2.4"/>
+    <path d="M6 8.4v7.2"/>
+    <path d="M6 8.4c0 4.2 3.4 3.6 7.5 3.6"/>
+    <path d="M15.5 12H15.6"/>
+  </svg>
+</div>
+  <div class="card-body">
+    <span class="card-badge">Project</span>
+    <h3 class="card-title">Self-Service GitOps Platform on AWS EKS</h3>
+    <p class="card-desc">A platform taking code from push to safely deployed, observed, policy-enforced production — zero manual deployment steps. Terraform, EKS, Argo CD, Argo Rollouts, Prometheus, Kyverno.</p>
+    <div class="chip-row">
+      <span class="chip">Terraform</span><span class="chip">EKS</span><span class="chip">Argo CD</span><span class="chip">Kyverno</span>
+    </div>
+    <a href="gitops-platform.html" class="card-link">View project &rarr;</a>
+    <div class="card-social-row">
+      <a href="https://github.com/AdeniyiDev/platform-infra" target="_blank" rel="noopener" class="card-social-link clickable" title="View source on GitHub">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.09 3.29 9.4 7.86 10.93.58.1.79-.25.79-.56 0-.27-.01-1.17-.02-2.12-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 2.87-.39c.97.01 1.95.13 2.87.39 2.19-1.49 3.15-1.18 3.15-1.18.62 1.58.23 2.75.11 3.04.73.8 1.18 1.83 1.18 3.09 0 4.42-2.69 5.4-5.25 5.68.42.36.78 1.08.78 2.18 0 1.57-.01 2.84-.01 3.23 0 .31.21.67.8.56A10.52 10.52 0 0 0 23.5 12c0-6.35-5.15-11.5-11.5-11.5Z"/></svg>
+        GitHub
+      </a>
+      <span class="card-social-link disabled" title="Video coming soon">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.5 15.5v-7L15.8 12l-6.3 3.5Z"/></svg>
+        YouTube<span class="card-social-soon">Soon</span>
+      </span>
+    </div>
+  </div>
+</div>
 
         <div class="card reveal" data-category="project">
           <div class="card-thumb"><span>☁</span></div>
